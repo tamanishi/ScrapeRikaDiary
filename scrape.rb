@@ -4,6 +4,7 @@ require 'nokogiri'
 proxy = ["#{ENV['proxy_address']}", "#{ENV['proxy_user']}", "#{ENV['proxy_password']}"]
 diaryTopUrl = 'http://rika.ed.jp/diary/'
 diaryPageUrl = 'http://rika.ed.jp/diary/page/'
+baseDir = '.'
 
 charset = nil
 html = open(diaryTopUrl, {:proxy_http_basic_authentication => proxy}) do |f|
@@ -19,9 +20,12 @@ doc.xpath('//div[@class="wp-pagenavi"]/span[@class="pages"]').each do |pageCount
   p pageNum
 end
 
+# 1ページめの処理
+
+# 2ページめ以降の処理
 for num in 2..pageNum
   pageUrl = diaryPageUrl + num.to_s + "/"
-  p pageUrl
+  p 'pageUrl = ' + pageUrl
   html = open(pageUrl, {:proxy_http_basic_authentication => proxy}) do |f|
     charset = f.charset
     f.read
@@ -29,14 +33,25 @@ for num in 2..pageNum
   doc = Nokogiri::HTML.parse(html, nil, charset)
   doc.xpath('//div[@class="entry-list"]/span[@class="title"]/a').each do |node|
     diaryUrl = node.attribute('href').value
-    p diaryUrl
+    p 'diaryUrl = ' + diaryUrl
+    diaryDir = diaryUrl.split("diary")[1]
+    p 'diaryDir = ' + diaryDir
     html = open(diaryUrl, {:proxy_http_basic_authentication => proxy}) do |f|
       charset = f.charset
       f.read
     end
     diaryDoc = Nokogiri::HTML.parse(html, nil, charset)
     diaryDoc.xpath('//div[@class="entry-content"]/p/a').each do |node|
-      p(node.attribute('href').value)
+      imageUrl = node.attribute('href').value
+      p 'imageUrl = ' + imageUrl
+      localDiaryDir = baseDir + diaryDir
+      FileUtils.mkdir_p(localDiaryDir) unless FileTest.exist?(localDiaryDir)
+      open(localDiaryDir + File.basename(imageUrl), "wb") do |output|
+        open(imageUrl, {:proxy_http_basic_authentication => proxy}) do |data|
+          output.write(data.read)
+        end
+      end
+      exit
     end
   end
 end
