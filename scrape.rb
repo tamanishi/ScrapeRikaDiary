@@ -20,11 +20,12 @@ doc.xpath('//div[@class="wp-pagenavi"]/span[@class="pages"]').each do |pageCount
   p pageNum
 end
 
-# 1ページめの処理
-
-# 2ページめ以降の処理
-for num in 2..pageNum
-  pageUrl = diaryPageUrl + num.to_s + "/"
+for num in 1..pageNum
+  if num == 1 then
+    pageUrl = diaryTopUrl
+  else
+    pageUrl = diaryPageUrl + num.to_s + "/"
+  end
   p 'pageUrl = ' + pageUrl
   html = open(pageUrl, {:proxy_http_basic_authentication => proxy}) do |f|
     charset = f.charset
@@ -41,7 +42,7 @@ for num in 2..pageNum
       f.read
     end
     diaryDoc = Nokogiri::HTML.parse(html, nil, charset)
-    diaryDoc.xpath('//div[@class="entry-content"]/p/a').each do |node|
+    diaryDoc.xpath('//div[@class="entry-content"]/*/a|//div[@class="entry-content"]/a').each do |node|
       imageUrl = node.attribute('href').value
       p 'imageUrl = ' + imageUrl
       localDiaryDir = baseDir + diaryDir
