@@ -41,12 +41,17 @@ for num in 1..pageNum
       charset = f.charset
       f.read
     end
+
+    localDiaryDir = baseDir + diaryDir
+    if FileTest.exist?(localDiaryDir) == true then
+      next
+    end
+    FileUtils.mkdir_p(localDiaryDir)
+
     diaryDoc = Nokogiri::HTML.parse(html, nil, charset)
     diaryDoc.xpath('//div[@class="entry-content"]/*/a|//div[@class="entry-content"]/a').each do |node|
       imageUrl = node.attribute('href').value
       p 'imageUrl = ' + imageUrl
-      localDiaryDir = baseDir + diaryDir
-      FileUtils.mkdir_p(localDiaryDir) unless FileTest.exist?(localDiaryDir)
       open(localDiaryDir + File.basename(imageUrl), "wb") do |output|
         open(imageUrl, {:proxy_http_basic_authentication => proxy}) do |data|
           output.write(data.read)
